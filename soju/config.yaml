@@ -1,5 +1,5 @@
 name: "Soju IRC Bouncer"
-version: "1.0.0"
+version: "1.0.1"
 slug: soju
 arch:
   - aarch64
@@ -21,3 +21,7 @@ schema:
   admin_password: str
   irc_port: int
   ircs_port: int
+build_from:
+  aarch64: ghcr.io/hassio-addons/base/aarch64:13.2.0
+  armv7: ghcr.io/hassio-addons/base/armv7:13.2.0
+  amd64: ghcr.io/hassio-addons/base/amd64:13.2.0
