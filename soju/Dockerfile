@@ -8,8 +8,7 @@ RUN git clone https://codeberg.org/emersion/soju . \
     && make soju sojuctl sojudb
 
 # Stage 2: runtime image (Home Assistant Alpine base)
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM ghcr.io/hassio-addons/base:13.2.0
 # Copy the compiled binaries from builder
 COPY --from=builder /go/src/soju/soju /usr/bin/soju
 COPY --from=builder /go/src/soju/sojuctl /usr/bin/sojuctl
