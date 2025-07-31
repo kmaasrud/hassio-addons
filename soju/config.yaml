@@ -1,15 +1,23 @@
-# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
-name: soju
-version: "1.0.1"
-slug: example
-description: IRC bouncer
-url: "https://github.com/kmaasrud/hassio-addons/tree/main/soju"
+name: "Soju IRC Bouncer"
+version: "1.0.0"
+slug: soju
 arch:
   - aarch64
-  - amd64
-  - armhf
   - armv7
-  - i386
-init: false
+  - amd64
+description: >-
+  IRC bouncer (Soju) for Home Assistant.
+startup: "system"
 ports:
-  6667/tcp: 6667
+  6667/tcp: 6667  # IRC plaintext
+  6697/tcp: 6697  # IRC over TLS (optional)
+options:
+  admin_user: admin
+  admin_password: ""
+  irc_port: 6667
+  ircs_port: 6697
+schema:
+  admin_user: str
+  admin_password: str
+  irc_port: int
+  ircs_port: int

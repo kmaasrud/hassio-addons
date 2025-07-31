@@ -1,45 +1,29 @@
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:alpine AS soju-build
-RUN --mount=type=cache,target=/var/cache/apk \
-	apk -U add build-base ca-certificates tzdata mailcap
-ARG SOJU_REF=master
-ADD https://codeberg.org/emersion/soju.git#${SOJU_REF} /src/
-WORKDIR /src
-ARG TARGETOS TARGETARCH TARGETPLATFORM TARGETVARIANT BUILDPLATFORM
-RUN --mount=type=cache,target=/root/.cache/go-build \
-	--mount=type=cache,target=/root/go/pkg/mod \
-	<<EOF
-	if [ "$TARGETPLATFORM" = "$BUILDPLATFORM" ]; then
-		tags=""
-		ldflags="-linkmode=external -extldflags=-static"
-	else
-		tags="moderncsqlite"
-		ldflags=""
-		# Workaround for https://todo.sr.ht/~emersion/soju/246
-		case "$SOJU_REF" in
-		v0.9.*)
-			go get modernc.org/sqlite@v1.35.0
-			;;
-		esac
-	fi
-	export GOOS=$TARGETOS GOARCH=$TARGETARCH
-	if [ "$TARGETARCH" = arm ]; then
-		export GOARM="${TARGETVARIANT##v}"
-	fi
-	ldflags="$ldflags -X codeberg.org/emersion/soju/config.DefaultPath=/soju-config"
-	ldflags="$ldflags -X codeberg.org/emersion/soju/config.DefaultUnixAdminPath=/soju-admin.sock"
-	go build -o . -tags="$tags" -ldflags="$ldflags" ./cmd/...
-EOF
+# Stage 1: build Soju binaries
+FROM golang:1.21-alpine3.18 AS builder
+ENV SOJU_VERSION v0.9.0
+RUN apk add --no-cache git make build-base
+WORKDIR /go/src/soju
+RUN git clone https://codeberg.org/emersion/soju . \
+    && git checkout $SOJU_VERSION \
+    && make soju sojuctl sojudb
 
+# Stage 2: runtime image (Home Assistant Alpine base)
 ARG BUILD_FROM
 FROM $BUILD_FROM
+# Copy the compiled binaries from builder
+COPY --from=builder /go/src/soju/soju /usr/bin/soju
+COPY --from=builder /go/src/soju/sojuctl /usr/bin/sojuctl
+COPY --from=builder /go/src/soju/sojudb /usr/bin/sojudb
 
-COPY run.sh /
+# Prepare Soju runtime environment
+RUN mkdir -p /run/soju
+# Copy the add-on entrypoint
+COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 
-COPY --from=soju-build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=soju-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=soju-build /etc/mime.types /etc/mime.types
-COPY --from=soju-build /src/soju /src/sojudb /src/sojuctl /usr/bin/
+# Metadata for Home Assistant
+LABEL io.hass.type="addon" \
+      io.hass.version="${BUILD_VERSION}" \
+      io.hass.arch="aarch64,armv7,amd64,i386"
 
-ENTRYPOINT ["/run.sh"]
-HEALTHCHECK CMD ["/usr/bin/sojuctl", "help"]
+CMD [ "/run.sh" ]
