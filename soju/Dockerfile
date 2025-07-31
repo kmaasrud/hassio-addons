@@ -17,8 +17,8 @@ COPY --from=builder /go/src/soju/sojudb /usr/bin/sojudb
 # Prepare Soju runtime environment
 RUN mkdir -p /run/soju
 # Copy the add-on entrypoint
-COPY run.sh /run.sh
-RUN chmod a+x /run.sh
+COPY run.sh /etc/services.d/soju/run
+RUN chmod a+x /etc/services.d/soju/run
 
 # Metadata for Home Assistant
 LABEL io.hass.type="addon" \

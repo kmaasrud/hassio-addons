@@ -1,4 +1,5 @@
 #!/usr/bin/with-contenv bashio
+set -e
 
 ADMIN_USER=$(bashio::config 'admin_user')
 ADMIN_PASS=$(bashio::config 'admin_password')
