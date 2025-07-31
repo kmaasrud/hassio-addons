@@ -1,5 +1,5 @@
 name: "Soju IRC Bouncer"
-version: "1.0.1"
+version: "1.0.0"
 slug: soju
 arch:
   - aarch64
